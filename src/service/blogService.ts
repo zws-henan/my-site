@@ -3,16 +3,20 @@ import { addBlogDao, finBlogDao, findBlogByIdDao, updateBlogDao, delBlogDao, inc
 import { increaseArticleCountDao, descreaseArticleCountDao } from "../dao/blogTypeDao.js";
 import { ValidateError } from '../utils/error.js';
 import { handleTOC } from '../utils/tool.js';
+import sequelize from '../dao/dbConnect.js';
 
 export async function addBlogService(data: BlogInfo) {
     data = handleTOC(data);
-    const result = await addBlogDao(data);
-    if (result && result.dataValues) {
-        await increaseArticleCountDao(data.categoryId);
-        return result.get({ plain: true });
-    } else {
-        return null;
-    }
+    const result = await sequelize.transaction(async (t) => {
+        const blog = await addBlogDao(data, t);
+        if (blog && blog.dataValues) {
+            await increaseArticleCountDao(data.categoryId, t);
+            return blog;
+        } else {
+            throw new ValidateError('博客创建失败');
+        }
+    });
+    return result.get({ plain: true });
 }
 
 export async function finBlogService(params: FindInfo) {
@@ -74,12 +78,15 @@ export async function delBlogService(id: number) {
         throw new ValidateError('博客已被删除，请刷新后重试');
     }
 
-    const result = await delBlogDao(id);
-    if(result){
-        const categoryId = data.dataValues.categoryId;
-        await descreaseArticleCountDao(categoryId);
-        return true;
-    }else{
-        throw new ValidateError('删除博客失败');
-    }
+    const result = await sequelize.transaction(async (t) => {
+        const deleted = await delBlogDao(id, t);
+        if (deleted) {
+            const categoryId = data.dataValues.categoryId;
+            await descreaseArticleCountDao(categoryId, t);
+            return true;
+        } else {
+            throw new ValidateError('删除博客失败');
+        }
+    });
+    return result;
 }

@@ -6,6 +6,7 @@ import BlogType from "./models/BlogType.js";
 import Blog from "./models/Blog.js";
 import "./models/Demo.js";
 import Message from "./models/Message.js";
+import Setting from "./models/Setting.js";
 
 
 
@@ -52,6 +53,22 @@ try {
             "description": "动漫中经常出现的日本农村街道，一份独特的恬静"
         }])
         console.log('Banner account created successfully.');
+    }
+    const settingCount= await Setting.count();
+    if(!settingCount){
+        await Setting.create({
+            avatar:'/static/avatar.jpeg',
+            siteTitle:'我的个人博客',
+            github:'https://github.com/',
+            qq:'2357838130@qq.com',
+            qqQrCode:'/static/qrcode/default_qq.png',
+            weixin:'aaaaa',
+            weixinQrCode:'/static/qrcode/default_weixin.png',
+            mail:'2357838130@qq.com',
+            icp:'豫ICP备00000000号',
+            githubName:'',
+        })
+        console.log('Setting account created successfully.');
     }
     console.log('All models have been synchronized successfully.');
 } catch (error) {

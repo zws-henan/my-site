@@ -32,10 +32,7 @@ export async function findAllDemoService(params: FindInfo) {
         const {deletedAt,...rest} = item;
         return rest;
     });
-    return {
-        count,
-        rows,
-    };
+    return rows;
 }
 
 export async function findDemoByIdService(id: number) {

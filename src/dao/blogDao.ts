@@ -1,5 +1,5 @@
 import Blog, { BlogAttributes, TocItem } from "./models/Blog.js";
-import { Op } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import BlogType,{BlogTypeAttributes} from "./models/BlogType.js";
 
 
@@ -25,8 +25,8 @@ export interface FindInfo {
 
 export type BlogDTO = Omit<BlogAttributes, "deletedAt"> & {category?:BlogTypeAttributes};
 
-export async function addBlogDao(data: BlogInfo) {
-    return await Blog.create(data);
+export async function addBlogDao(data: BlogInfo, t?: Transaction) {
+    return await Blog.create(data, { transaction: t });
 }
 
 export async function finBlogDao(params: { offset?: number, limit?: number, keyword?: string, categoryId?: number }) {
@@ -72,16 +72,16 @@ export async function findBlogByIdDao(id: number) {
 export async function increaseScanNumberDao(params: { id: number }) {
     return await Blog.update({ scanNumber: Blog.sequelize.literal('scanNumber + 1') }, { where: { id: params.id } });
 }
-export async function increaseCommentNumberDao(params: { id: number }) {
-    return await Blog.update({ commentNumber: Blog.sequelize.literal('commentNumber + 1') }, { where: { id: params.id } });
+export async function increaseCommentNumberDao(params: { id: number }, t?: Transaction) {
+    return await Blog.update({ commentNumber: Blog.sequelize.literal('commentNumber + 1') }, { where: { id: params.id }, transaction: t });
 }
-export async function decreaseCommentNumberDao(params: { id: number }) {
-    return await Blog.update({ commentNumber: Blog.sequelize.literal('commentNumber - 1') }, { where: { id: params.id } });
+export async function decreaseCommentNumberDao(params: { id: number }, t?: Transaction) {
+    return await Blog.update({ commentNumber: Blog.sequelize.literal('commentNumber - 1') }, { where: { id: params.id }, transaction: t });
 }
 export async function updateBlogDao(id: number,params: BlogInfo) {
     return await Blog.update(params, { where: { id } });
 }
 
-export async function delBlogDao(id: number) {
-    return await Blog.destroy({ where: { id } });
+export async function delBlogDao(id: number, t?: Transaction) {
+    return await Blog.destroy({ where: { id }, transaction: t });
 }

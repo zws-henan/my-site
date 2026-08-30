@@ -20,6 +20,7 @@ import blogTypeRouter from './routes/blogType.js';
 import blogRouter from './routes/blog.js';
 import demoRouter from './routes/demo.js';
 import messageRouter from './routes/message.js';
+import settingRouter from './routes/setting.js';
 
 
 
@@ -104,6 +105,12 @@ app.use(expressjwt({
   },{
     "url":/\/api\/comment\/\d+/,
     "method":"GET"
+  },{
+    "url":"/api/setting",
+    "method":"GET"
+  },{
+    "url":/\/api\/setting\/\d+/,
+    "method":"GET"
   },]
 }))
 
@@ -116,6 +123,7 @@ app.use('/api/blog', blogRouter);
 app.use('/api/demo', demoRouter);
 app.use('/api/message', messageRouter);
 app.use('/api/comment', messageRouter);
+app.use('/api/setting', settingRouter);
 
 
 // catch 404 and forward to error handler

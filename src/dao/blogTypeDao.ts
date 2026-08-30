@@ -1,4 +1,5 @@
 import BlogType, { BlogTypeAttributes } from "./models/BlogType.js";
+import { Transaction } from "sequelize";
 
 export interface BlogTypeInfo {
     name: string;
@@ -31,10 +32,10 @@ export async function delBlogTypeDao(id: number) {
     return await BlogType.destroy({ where: { id } });
 }
 
-export async function increaseArticleCountDao(id: number) {
-    return await BlogType.update({ articleCount: BlogType.sequelize.literal('articleCount + 1') }, { where: { id } });
+export async function increaseArticleCountDao(id: number, t?: Transaction) {
+    return await BlogType.update({ articleCount: BlogType.sequelize.literal('articleCount + 1') }, { where: { id }, transaction: t });
 }
 
-export async function descreaseArticleCountDao(id: number) {
-    return await BlogType.update({ articleCount: BlogType.sequelize.literal('articleCount - 1') }, { where: { id } });
+export async function descreaseArticleCountDao(id: number, t?: Transaction) {
+    return await BlogType.update({ articleCount: BlogType.sequelize.literal('articleCount - 1') }, { where: { id }, transaction: t });
 }

@@ -11,6 +11,7 @@ import {
 import { ValidateError } from '../utils/error.js';
 import { MessageCreationAttributes } from '../dao/models/Message.js';
 import { decreaseCommentNumberDao, increaseCommentNumberDao } from '../dao/blogDao.js';
+import sequelize from '../dao/dbConnect.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from "url";
@@ -48,14 +49,17 @@ export async function addMessageService(data: MessageCreationAttributes) {
         blogId: data.blogId ?? null,
     };
 
-    const result = await createMessageDao(finalData);
-    if (!result) {
-        throw new ValidateError('留言创建失败');
-    }
-    // 只在"真的关联了博客"时才把博客的评论计数 +1；全局留言（null/0/undefined）不需要改任何博客统计
-    if (isValidBlogId(finalData.blogId)) {
-        await increaseCommentNumberDao({ id: finalData.blogId });
-    }
+    const result = await sequelize.transaction(async (t) => {
+        const message = await createMessageDao(finalData, t);
+        if (!message) {
+            throw new ValidateError('留言创建失败');
+        }
+        // 只在"真的关联了博客"时才把博客的评论计数 +1；全局留言（null/0/undefined）不需要改任何博客统计
+        if (isValidBlogId(finalData.blogId)) {
+            await increaseCommentNumberDao({ id: finalData.blogId }, t);
+        }
+        return message;
+    });
     const row = result.get({ plain: true });
     const { deletedAt, ...rest } = row;
     void deletedAt;
@@ -156,13 +160,15 @@ export async function deleteMessageService(id: number) {
     const row = data.get({ plain: true });
     const blogId = row.blogId;
 
-    // 2) 执行留言删除（软删 paranoid，这里执行完 data 对象里的 deletedAt 会被改写，但我们已经取出 blogId 了）
-    await deleteMessageDao(id);
+    // 2) 执行留言删除 + 同步博客评论数，用事务保证两步原子性
+    await sequelize.transaction(async (t) => {
+        await deleteMessageDao(id, t);
+        // 只有"这条留言挂在某篇博客下（blogId 是有效的正整数）"才扣减博客评论数
+        // 全局留言（blogId = null / 0 / undefined）不需要动任何博客的统计
+        if (isValidBlogId(blogId)) {
+            await decreaseCommentNumberDao({ id: blogId }, t);
+        }
+    });
 
-    // 3) 只有"这条留言挂在某篇博客下（blogId 是有效的正整数）"才扣减博客评论数
-    //    全局留言（blogId = null / 0 / undefined）不需要动任何博客的统计
-    if (isValidBlogId(blogId)) {
-        await decreaseCommentNumberDao({ id: blogId });
-    }
     return true;
 }

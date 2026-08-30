@@ -1,5 +1,5 @@
 import Message, { MessageAttributes, MessageCreationAttributes } from './models/Message.js';
-import { Op, WhereOptions, literal } from 'sequelize';
+import { Op, WhereOptions, literal, Transaction } from 'sequelize';
 import Blog from './models/Blog.js';
 
 // 完整消息类型（DAO 层输出，字段与 MessageAttributes 接口一致）
@@ -87,9 +87,10 @@ export async function findAllMessageDao(params: FindAllParams) {
 
 // 新增留言：入参是“带默认值补全后的创建字段”（Service 层已补好）
 export async function createMessageDao(
-    params: MessageCreationAttributes & { blogId: number | null }
+    params: MessageCreationAttributes & { blogId: number | null },
+    t?: Transaction
 ) {
-    return await Message.create(params);
+    return await Message.create(params, { transaction: t });
 }
 
 // 修改留言（返回 [affectedCount]）
@@ -98,8 +99,8 @@ export async function updateMessageDao(id: number, params: UpdateInfo) {
 }
 
 // 删除留言（paranoid 软删除）
-export async function deleteMessageDao(id: number) {
-    return await Message.destroy({ where: { id } });
+export async function deleteMessageDao(id: number, t?: Transaction) {
+    return await Message.destroy({ where: { id }, transaction: t });
 }
 
 // 按 ID 查单条（软删除过滤：默认只查未删）
